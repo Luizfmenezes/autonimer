@@ -1,0 +1,35 @@
+services:
+  # Serviço 1: WAHA - Voltando para a imagem original com API Key
+  waha:
+    image: devlikeapro/waha:latest
+    container_name: waha_whatsapp_api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - waha_session_data:/app/sessions
+    environment:
+      - WAHA_SESSION_NAME=default
+      - WAHA_START_SESSIONS=default
+      - WAHA_API_KEY=${WAHA_API_KEY} # Lendo a chave de API do arquivo .env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Serviço 2: Automação Principal
+  automacao:
+    container_name: automacao_nimer
+    build: .
+    env_file:
+      - .env
+    volumes:
+      - ./output:/app/output
+    depends_on:
+      waha:
+        condition: service_healthy
+
+volumes:
+  waha_session_data:
